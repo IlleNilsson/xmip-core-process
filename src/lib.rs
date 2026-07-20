@@ -15,7 +15,7 @@ impl fmt::Display for ProcessError {
 }
 impl Error for ProcessError {}
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ProcessOutcome {
     Message(Message),
     NoMessage,
