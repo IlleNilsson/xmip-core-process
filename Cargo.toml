@@ -2,12 +2,12 @@
 [workspace]
 
 [package]
-name = "xmip-process"
+name = "xmip-core-process"
 version = "0.1.0"
 edition = "2024"
 license = "AGPL-3.0-or-later"
-repository = "https://github.com/IlleNilsson/xmip-process"
+repository = "https://github.com/IlleNilsson/xmip-core-process"
 description = "Configured Xmip Process execution contracts."
 
 [dependencies]
-xmip-message = { git = "https://github.com/IlleNilsson/xmip-message", rev = "e7967fc12dcc21197e8cc468b23210b244d83537" }
+xmip-message = { package = "xmip-core-message", git = "https://github.com/IlleNilsson/xmip-core-message", branch = "main" }
