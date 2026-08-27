@@ -10,4 +10,5 @@ repository = "https://github.com/IlleNilsson/xmip-core-process"
 description = "Configured Xmip Process execution contracts."
 
 [dependencies]
+xmip-core = { git = "https://github.com/IlleNilsson/xmip-core", branch = "main" }
 xmip-message = { package = "xmip-core-message", git = "https://github.com/IlleNilsson/xmip-core-message", branch = "main" }
