@@ -1,9 +1,9 @@
 #![forbid(unsafe_code)]
 
+use message::Message;
 use std::error::Error;
 use std::fmt;
-use xmip_core::PartyId;
-use xmip_message::Message;
+use xcore::PartyId;
 
 #[derive(Debug)]
 pub struct ProcessError {
