@@ -1,10 +1,10 @@
 # Xmip Process instances
 
-A Message references one immutable stream.
-
-A Message is not multi-stream. There is no Message Section model in Xmip.
-
-When content changes, an assignment or transformation creates a new Message and, when needed, a new stream. Existing Messages and their referenced streams remain immutable.
+What a Message is, its Sections and its immutability are the estate's
+(`doc/terminology.md`, *Message and Section*; `doc/architecture/runtime-model.md`
+section 2), not this document's. When content changes, an assignment or
+transformation creates a new Message; existing Messages and the Streams they
+reference remain immutable.
 
 ## Long-running Xmip Processes
 
