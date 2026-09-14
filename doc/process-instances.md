@@ -1,33 +1,25 @@
 # Xmip Process instances
 
-What a Message is, its Sections and its immutability are the estate's
-(`doc/terminology.md`, *Message and Section*; `doc/architecture/runtime-model.md`
-section 2), not this document's. When content changes, an assignment or
-transformation creates a new Message; existing Messages and the Streams they
-reference remain immutable.
+What an Xmip Process is, that its state belongs to the cluster rather than to
+any thread or node, and that a Subscription starts it while a Correlation Rule
+resumes it, are the estate's: `doc/architecture/runtime-model.md` section 22.
+What a Message is, its Sections and its immutability are `doc/terminology.md`,
+*Message and Section*. This document says the one thing left to say beside the
+code: how a long-running Process Instance relates to the Messages it handles.
 
-## Long-running Xmip Processes
+## One Instance, many Messages
 
-An Xmip Process may live for a period of time and handle multiple Messages over time.
-
-Examples:
-
-```text
-procurement process
-onboarding process
-offboarding process
-```
-
-Such a Process is represented by an Xmip Process instance.
-
-A Process instance can correlate Messages that arrive at different times. Each Message still references one immutable stream.
+A Process that lives for a period of time — procurement, onboarding,
+offboarding — is one Process Instance handling Messages that arrive at
+different times. Each Message still references one immutable Stream; the
+multi-Message behavior belongs to the Instance, not to the Message.
 
 ```text
 Message A -> Stream A
 Message B -> Stream B
 Message C -> Stream C
 
-Xmip Process instance
+Xmip Process Instance
     handles Message A
     waits
     handles Message B
@@ -35,11 +27,9 @@ Xmip Process instance
     handles Message C
 ```
 
-The multi-message behavior belongs to the Xmip Process instance, not to the Message.
-
 ## Rule
 
 ```text
-Message = one immutable stream reference
-Xmip Process instance = may handle many Messages over time
+Message = one immutable Stream reference
+Xmip Process Instance = may handle many Messages over time
 ```
