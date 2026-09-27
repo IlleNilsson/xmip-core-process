@@ -2,7 +2,8 @@
 
 Xmip Process execution: an `XmipProcess` runs a step and answers with a
 `ProcessOutcome` — a Message, no Message, or waiting for something named —
-and a `ProcessRegistry` finds the Xmip Process a Subscription starts. Each
+or, where it could not run, with `xcore::Failure`, the estate's one retryable
+failure; and a `ProcessRegistry` finds the Xmip Process a Subscription starts. Each
 scripting host is a technology under this repository.
 
 An Xmip Process is a Definition started by a Subscription, not an operating
