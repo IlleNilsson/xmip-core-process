@@ -1,9 +1,7 @@
 #![forbid(unsafe_code)]
 
 use message::Message;
-use xcore::PartyId;
-
-xcore::declare_retryable_error!(ProcessError);
+use xcore::{Failure, PartyId};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ProcessOutcome {
@@ -31,7 +29,11 @@ pub trait XmipProcess: Send + Sync {
         None
     }
 
-    fn execute(&self, message: &Message) -> Result<ProcessOutcome, ProcessError>;
+    /// Run the Process on `message`.
+    ///
+    /// # Errors
+    /// Why it did not run, and whether trying again could change that.
+    fn execute(&self, message: &Message) -> Result<ProcessOutcome, Failure>;
 }
 
 pub trait ProcessRegistry: Send + Sync {
@@ -53,7 +55,7 @@ mod tests {
             "2"
         }
 
-        fn execute(&self, _: &Message) -> Result<ProcessOutcome, ProcessError> {
+        fn execute(&self, _: &Message) -> Result<ProcessOutcome, Failure> {
             Ok(ProcessOutcome::NoMessage)
         }
     }
@@ -92,8 +94,7 @@ mod tests {
             ProcessOutcome::NoMessage,
             ProcessOutcome::Waiting(String::new())
         );
-        assert!(ProcessError::retryable("later").retryable);
-        assert!(!ProcessError::permanent("never").retryable);
-        assert_eq!(ProcessError::permanent("never").to_string(), "never");
+        assert!(Failure::retryable("later").retryable);
+        assert!(!Failure::permanent("never").retryable);
     }
 }
