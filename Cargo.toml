@@ -16,3 +16,6 @@ path = ".src/lib.rs"
 [dependencies]
 xcore = { package = "xmip-core", git = "https://github.com/IlleNilsson/xmip-core", branch = "main" }
 message = { package = "xmip-core-message", git = "https://github.com/IlleNilsson/xmip-core-message", branch = "main" }
+
+[profile.dev.package."*"]
+opt-level = 3
