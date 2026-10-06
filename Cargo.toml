@@ -7,7 +7,7 @@ version = "0.1.0"
 edition = "2024"
 license = "AGPL-3.0-or-later"
 repository = "https://github.com/IlleNilsson/xmip-core-process"
-description = "Configured Xmip Process execution contracts."
+description = "Configured Work Process execution contracts."
 
 [lib]
 # A directory of many usages keeps its source aside (ADR-0049).

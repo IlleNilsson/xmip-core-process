@@ -10,16 +10,16 @@ pub enum ProcessOutcome {
     Waiting(String),
 }
 
-pub trait XmipProcess: Send + Sync {
+pub trait WorkProcess: Send + Sync {
     fn name(&self) -> &str;
     fn version(&self) -> &str;
 
-    /// The Party this Process runs as.
+    /// The Party this Work Process runs as.
     ///
-    /// Consequential beyond the Process itself. ADR-0022 clause 3 gives a host
-    /// process the work of exactly one identity context, so this decides which
-    /// host process the Process can be placed in — and an estate with eight
-    /// distinct identities runs at least eight host processes on any node
+    /// Consequential beyond the Work Process itself. ADR-0022 clause 3 gives
+    /// a Host Service the work of exactly one identity context, so this decides
+    /// which Host Service the Work Process can be placed in — and an estate with eight
+    /// distinct identities runs at least eight Host Services on any node
     /// serving all eight. That cost belongs in capacity planning rather than
     /// being discovered in production.
     ///
@@ -29,7 +29,7 @@ pub trait XmipProcess: Send + Sync {
         None
     }
 
-    /// Run the Process on `message`.
+    /// Run the Work Process on `message`.
     ///
     /// # Errors
     /// Why it did not run, and whether trying again could change that.
@@ -37,7 +37,7 @@ pub trait XmipProcess: Send + Sync {
 }
 
 pub trait ProcessRegistry: Send + Sync {
-    fn resolve(&self, name: &str, version: &str) -> Option<&dyn XmipProcess>;
+    fn resolve(&self, name: &str, version: &str) -> Option<&dyn WorkProcess>;
 }
 
 #[cfg(test)]
@@ -46,7 +46,7 @@ mod tests {
 
     struct Orders;
 
-    impl XmipProcess for Orders {
+    impl WorkProcess for Orders {
         fn name(&self) -> &str {
             "orders"
         }
@@ -63,11 +63,11 @@ mod tests {
     struct Registry(Vec<Orders>);
 
     impl ProcessRegistry for Registry {
-        fn resolve(&self, name: &str, version: &str) -> Option<&dyn XmipProcess> {
+        fn resolve(&self, name: &str, version: &str) -> Option<&dyn WorkProcess> {
             self.0
                 .iter()
                 .find(|p| p.name() == name && p.version() == version)
-                .map(|p| p as &dyn XmipProcess)
+                .map(|p| p as &dyn WorkProcess)
         }
     }
 
