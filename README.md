@@ -3,8 +3,12 @@
 Xmip Process execution: an `XmipProcess` runs a step and answers with a
 `ProcessOutcome` — a Message, no Message, or waiting for something named —
 or, where it could not run, with `xcore::Failure`, the estate's one retryable
-failure; and a `ProcessRegistry` finds the Xmip Process a Subscription starts. Each
-scripting host is a technology under this repository.
+failure; and a `ProcessRegistry` finds the Xmip Process a Subscription starts.
+These are the traits; nothing implements them outside this crate's tests,
+nothing compiles a design into one, and no node runs one
+([decided, not built](../../../../doc/architecture/estate-map.md#process-execution)): a Journey to an Xmip
+Process ends saying no runtime runs it yet. What a design compiles into is
+ADR-0066's: a native Module the node loads.
 
 An Xmip Process is a Definition started by a Subscription, not an operating
 system process (`doc/terminology.md`). It does not receive external Streams
