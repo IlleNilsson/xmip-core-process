@@ -1,6 +1,6 @@
-# Xmip Process instances
+# Work Process instances
 
-What an Xmip Process is, that its state belongs to the cluster rather than to
+What a Work Process is, that its state belongs to the cluster rather than to
 any thread or node, and that a Subscription starts it while a Correlation Rule
 resumes it, are the estate's: `doc/architecture/runtime-model.md` section 22.
 What a Message is, its Sections and its immutability are `doc/terminology.md`,
@@ -19,7 +19,7 @@ Message A -> Stream A
 Message B -> Stream B
 Message C -> Stream C
 
-Xmip Process Instance
+Work Process Instance
     handles Message A
     waits
     handles Message B
@@ -31,5 +31,5 @@ Xmip Process Instance
 
 ```text
 Message = one immutable Stream reference
-Xmip Process Instance = may handle many Messages over time
+Work Process Instance = may handle many Messages over time
 ```
