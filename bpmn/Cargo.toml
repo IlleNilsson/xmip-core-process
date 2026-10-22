@@ -1,0 +1,30 @@
+# Its own workspace root, so this repository builds on its own.
+[workspace]
+
+[package]
+name = "xmip-core-process-bpmn"
+version = "0.1.0"
+edition = "2024"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/IlleNilsson/xmip-core-process-bpmn"
+description = "BPMN 2.0 Work Process design format: a diagram with its BPMN DI, read offline against the schemas it ships, compiled to the one Work Process program. A xmip-core-process technology."
+publish = false
+
+[dependencies]
+process = { package = "xmip-core-process", git = "https://github.com/IlleNilsson/xmip-core-process", branch = "main" }
+xcore = { package = "xmip-core", git = "https://github.com/IlleNilsson/xmip-core", branch = "main" }
+assign = { package = "xmip-core-assign", git = "https://github.com/IlleNilsson/xmip-core-assign", branch = "main" }
+path = { package = "xmip-core-path", git = "https://github.com/IlleNilsson/xmip-core-path", branch = "main" }
+# A timer's ISO 8601 date and duration, read by the estate's one calendar.
+codec = { package = "xmip-core-library-codec", git = "https://github.com/IlleNilsson/xmip-core-library-codec", branch = "main" }
+# The XML reader: a pull parser with namespaces resolved and no network
+# code (MIT; memchr, MIT or Unlicense). No default features.
+quick-xml = { version = "0.42", default-features = false }
+# The designer's view and edits cross to the runtime's exports as JSON.
+serde = { version = "1", features = ["derive"] }
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[dev-dependencies]
+serde_json = "1"
