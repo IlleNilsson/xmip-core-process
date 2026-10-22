@@ -1,100 +1,41 @@
-#![forbid(unsafe_code)]
+// deny, not forbid: `export` stands on the far side of the C boundary and
+// allows it there alone, each block with a SAFETY comment.
+#![deny(unsafe_code)]
 
-use message::Message;
-use xcore::{Failure, PartyId};
+//! Xmip Work Processes: designed in VS Code, compiled at design time,
+//! executed when called upon (ADR-0066, amendment 2026-10-22).
+//!
+//! The owner, 2026-10-22: *I would like a Work Process to be designed in VS
+//! Code, but at the end of the day it is a compiled piece executed when
+//! called upon.* So:
+//!
+//! - [`design`]: a design format is a technology behind [`DesignFormat`],
+//!   reading a design and compiling it to the one [`Program`] form; BPMN
+//!   2.0 is the default (`xmip-core-process-bpmn`, mounted beside this
+//!   source).
+//! - [`program`]: the compiled form, a graph of steps a design becomes.
+//! - [`generate`]: the Work Process unit a program is built into, a Rust
+//!   crate exporting it through the C ABI ([`export`], `xmip_module.h`
+//!   section 13), and the module entry naming it.
+//! - [`flow`]: what a unit is to the runtime, a [`Flow`] advanced one turn
+//!   at a time over an [`Instance`] the Ledger keeps; [`Compiled`] runs a
+//!   program, and a unit written by hand implements [`Flow`] itself.
+//! - [`form`]: the binary forms a program, an Instance and a turn cross in.
+//!
+//! The engine runs the compiled form only and never knows which format a
+//! program came from; the runtime (`xmip-core-runtime`) carries out the
+//! acts a turn answers and keeps the Instance in the Ledger, so a waiting
+//! Instance holds no thread (`runtime-model.md` section 22).
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum ProcessOutcome {
-    Message(Message),
-    NoMessage,
-    Waiting(String),
-}
+pub mod design;
+pub mod export;
+pub mod flow;
+pub mod form;
+pub mod generate;
+pub mod instance;
+pub mod program;
 
-pub trait WorkProcess: Send + Sync {
-    fn name(&self) -> &str;
-    fn version(&self) -> &str;
-
-    /// The Party this Work Process runs as.
-    ///
-    /// Consequential beyond the Work Process itself. ADR-0022 clause 3 gives
-    /// a Host Service the work of exactly one identity context, so this decides
-    /// which Host Service the Work Process can be placed in — and an estate with eight
-    /// distinct identities runs at least eight Host Services on any node
-    /// serving all eight. That cost belongs in capacity planning rather than
-    /// being discovered in production.
-    ///
-    /// `None` runs as the Host Service's own identity, which is the ordinary
-    /// case and still an identity context like any other.
-    fn runs_as(&self) -> Option<PartyId> {
-        None
-    }
-
-    /// Run the Work Process on `message`.
-    ///
-    /// # Errors
-    /// Why it did not run, and whether trying again could change that.
-    fn execute(&self, message: &Message) -> Result<ProcessOutcome, Failure>;
-}
-
-pub trait ProcessRegistry: Send + Sync {
-    fn resolve(&self, name: &str, version: &str) -> Option<&dyn WorkProcess>;
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    struct Orders;
-
-    impl WorkProcess for Orders {
-        fn name(&self) -> &str {
-            "orders"
-        }
-
-        fn version(&self) -> &str {
-            "2"
-        }
-
-        fn execute(&self, _: &Message) -> Result<ProcessOutcome, Failure> {
-            Ok(ProcessOutcome::NoMessage)
-        }
-    }
-
-    struct Registry(Vec<Orders>);
-
-    impl ProcessRegistry for Registry {
-        fn resolve(&self, name: &str, version: &str) -> Option<&dyn WorkProcess> {
-            self.0
-                .iter()
-                .find(|p| p.name() == name && p.version() == version)
-                .map(|p| p as &dyn WorkProcess)
-        }
-    }
-
-    #[test]
-    fn a_registry_resolves_by_name_and_version() {
-        let registry = Registry(vec![Orders]);
-        let found = registry.resolve("orders", "2").expect("resolved");
-        assert_eq!(found.name(), "orders");
-        assert_eq!(
-            found.runs_as(),
-            None,
-            "a process runs as the node unless it says otherwise"
-        );
-        assert!(registry.resolve("orders", "1").is_none());
-    }
-
-    #[test]
-    fn an_outcome_and_an_error_carry_what_a_caller_decides_on() {
-        assert_eq!(
-            ProcessOutcome::Waiting("invoice".to_string()),
-            ProcessOutcome::Waiting("invoice".to_string())
-        );
-        assert_ne!(
-            ProcessOutcome::NoMessage,
-            ProcessOutcome::Waiting(String::new())
-        );
-        assert!(Failure::retryable("later").retryable);
-        assert!(!Failure::permanent("never").retryable);
-    }
-}
+pub use design::{DEFAULT_FORMAT, DesignFormat, LocalResources, NoResources, Refusal, remote};
+pub use flow::{Act, Arrival, Compiled, Declared, Event, Flow, Refused};
+pub use instance::{Instance, Outcome};
+pub use program::{Program, Step};

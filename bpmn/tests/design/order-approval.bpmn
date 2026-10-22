@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xmip="urn:xmip:process:1"
+    xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL https://www.omg.org/spec/BPMN/20100501/BPMN20.xsd"
+    id="Definitions" targetNamespace="urn:example:orders">
+  <bpmn:error id="Declined" errorCode="declined"/>
+  <bpmn:error id="Late" errorCode="late"/>
+  <bpmn:process id="OrderApproval" name="Order approval" isExecutable="true">
+    <bpmn:startEvent id="Received">
+      <bpmn:extensionElements>
+        <xmip:correlate set="Order"/>
+      </bpmn:extensionElements>
+      <bpmn:messageEventDefinition/>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Check" name="Check the order">
+      <bpmn:extensionElements>
+        <xmip:call module="orders" unit="Check">
+          <xmip:setting name="level" value="2"/>
+        </xmip:call>
+      </bpmn:extensionElements>
+    </bpmn:serviceTask>
+    <bpmn:boundaryEvent id="CheckDeclined" attachedToRef="Check">
+      <bpmn:errorEventDefinition errorRef="Declined"/>
+    </bpmn:boundaryEvent>
+    <bpmn:sendTask id="Reject" name="Reject the order"/>
+    <bpmn:endEvent id="Rejected"/>
+    <bpmn:exclusiveGateway id="Big" name="Over 1000?" default="ToApprove"/>
+    <bpmn:receiveTask id="Approval" name="Wait for approval">
+      <bpmn:extensionElements>
+        <xmip:correlate set="Order"/>
+      </bpmn:extensionElements>
+    </bpmn:receiveTask>
+    <bpmn:boundaryEvent id="ApprovalLate" attachedToRef="Approval">
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration>PT1H</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:endEvent id="Escalated">
+      <bpmn:errorEventDefinition errorRef="Late"/>
+    </bpmn:endEvent>
+    <bpmn:task id="Approve" name="Mark approved">
+      <bpmn:dataOutputAssociation id="Status">
+        <bpmn:assignment>
+          <bpmn:from>'approved'</bpmn:from>
+          <bpmn:to>Status</bpmn:to>
+        </bpmn:assignment>
+      </bpmn:dataOutputAssociation>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Merge"/>
+    <bpmn:sendTask id="Confirm" name="Confirm the order"/>
+    <bpmn:endEvent id="Done"/>
+    <bpmn:sequenceFlow id="F1" sourceRef="Received" targetRef="Check"/>
+    <bpmn:sequenceFlow id="F2" sourceRef="Check" targetRef="Big"/>
+    <bpmn:sequenceFlow id="F3" sourceRef="CheckDeclined" targetRef="Reject"/>
+    <bpmn:sequenceFlow id="F4" sourceRef="Reject" targetRef="Rejected"/>
+    <bpmn:sequenceFlow id="ToApproval" sourceRef="Big" targetRef="Approval">
+      <bpmn:conditionExpression language="urn:xmip:expression">Amount &gt; 1000</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="ToApprove" sourceRef="Big" targetRef="Approve"/>
+    <bpmn:sequenceFlow id="F5" sourceRef="Approval" targetRef="Merge"/>
+    <bpmn:sequenceFlow id="F6" sourceRef="ApprovalLate" targetRef="Escalated"/>
+    <bpmn:sequenceFlow id="F7" sourceRef="Approve" targetRef="Merge"/>
+    <bpmn:sequenceFlow id="F8" sourceRef="Merge" targetRef="Confirm"/>
+    <bpmn:sequenceFlow id="F9" sourceRef="Confirm" targetRef="Done"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram">
+    <bpmndi:BPMNPlane id="Plane" bpmnElement="OrderApproval">
+      <bpmndi:BPMNShape id="Received_di" bpmnElement="Received">
+        <dc:Bounds x="40" y="120" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Check_di" bpmnElement="Check">
+        <dc:Bounds x="120" y="98" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CheckDeclined_di" bpmnElement="CheckDeclined">
+        <dc:Bounds x="152" y="160" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Reject_di" bpmnElement="Reject">
+        <dc:Bounds x="120" y="240" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Rejected_di" bpmnElement="Rejected">
+        <dc:Bounds x="152" y="360" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Big_di" bpmnElement="Big" isMarkerVisible="true">
+        <dc:Bounds x="270" y="113" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Approval_di" bpmnElement="Approval">
+        <dc:Bounds x="370" y="40" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ApprovalLate_di" bpmnElement="ApprovalLate">
+        <dc:Bounds x="402" y="102" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Escalated_di" bpmnElement="Escalated">
+        <dc:Bounds x="502" y="200" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Approve_di" bpmnElement="Approve">
+        <dc:Bounds x="370" y="160" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Merge_di" bpmnElement="Merge" isMarkerVisible="true">
+        <dc:Bounds x="520" y="113" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Confirm_di" bpmnElement="Confirm">
+        <dc:Bounds x="620" y="98" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Done_di" bpmnElement="Done">
+        <dc:Bounds x="770" y="120" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="F1_di" bpmnElement="F1">
+        <di:waypoint x="76" y="138"/>
+        <di:waypoint x="120" y="138"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F2_di" bpmnElement="F2">
+        <di:waypoint x="220" y="138"/>
+        <di:waypoint x="270" y="138"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F3_di" bpmnElement="F3">
+        <di:waypoint x="170" y="196"/>
+        <di:waypoint x="170" y="240"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F4_di" bpmnElement="F4">
+        <di:waypoint x="170" y="320"/>
+        <di:waypoint x="170" y="360"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ToApproval_di" bpmnElement="ToApproval">
+        <di:waypoint x="295" y="113"/>
+        <di:waypoint x="295" y="80"/>
+        <di:waypoint x="370" y="80"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="ToApprove_di" bpmnElement="ToApprove">
+        <di:waypoint x="295" y="163"/>
+        <di:waypoint x="295" y="200"/>
+        <di:waypoint x="370" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F5_di" bpmnElement="F5">
+        <di:waypoint x="470" y="80"/>
+        <di:waypoint x="545" y="80"/>
+        <di:waypoint x="545" y="113"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F6_di" bpmnElement="F6">
+        <di:waypoint x="420" y="138"/>
+        <di:waypoint x="420" y="218"/>
+        <di:waypoint x="502" y="218"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F7_di" bpmnElement="F7">
+        <di:waypoint x="470" y="200"/>
+        <di:waypoint x="545" y="200"/>
+        <di:waypoint x="545" y="163"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F8_di" bpmnElement="F8">
+        <di:waypoint x="570" y="138"/>
+        <di:waypoint x="620" y="138"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F9_di" bpmnElement="F9">
+        <di:waypoint x="720" y="138"/>
+        <di:waypoint x="770" y="138"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

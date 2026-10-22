@@ -7,15 +7,23 @@ version = "0.1.0"
 edition = "2024"
 license = "AGPL-3.0-or-later"
 repository = "https://github.com/IlleNilsson/xmip-core-process"
-description = "Configured Work Process execution contracts."
+description = "Xmip Work Processes: the design format trait, the compiled program a design becomes, the Work Process unit it is built into and the engine advancing an Instance a turn at a time."
 
 [lib]
-# A directory of many usages keeps its source aside (ADR-0049).
+# A host crate: the design formats mount beside this source (ADR-0049).
 path = ".src/lib.rs"
 
 [dependencies]
 xcore = { package = "xmip-core", git = "https://github.com/IlleNilsson/xmip-core", branch = "main" }
-message = { package = "xmip-core-message", git = "https://github.com/IlleNilsson/xmip-core-message", branch = "main" }
+# A decision is one line of Xmip's expression language, compiled once as a
+# unit opens (ADR-0066 clause 2).
+path = { package = "xmip-core-path", git = "https://github.com/IlleNilsson/xmip-core-path", branch = "main" }
+# An Assignment is the assign capability's, done by a Work Process alone.
+assign = { package = "xmip-core-assign", git = "https://github.com/IlleNilsson/xmip-core-assign", branch = "main" }
+# The fields every compact form is written with.
+codec = { package = "xmip-core-library-codec", git = "https://github.com/IlleNilsson/xmip-core-library-codec", branch = "main" }
+# The C boundary export.rs stands on: the header's tables, mirrored in Rust.
+xmip_core_abi = { package = "xmip-core-abi", git = "https://github.com/IlleNilsson/xmip-core-abi", branch = "main" }
 
 [profile.dev.package."*"]
 opt-level = 3
