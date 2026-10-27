@@ -13,7 +13,7 @@ day it is a compiled piece executed when called upon.*
   files beside the design and nothing else.
 - **`program`** — the compiled form: a graph of typed steps — a start, work
   on a Message (a unit's call, an Assignment, a split), a publish, a wait for
-  the next Message of a correlation set's key, a Batch, a timer, a decision
+  the next Message of a Correlation's key, a Batch, a timer, a decision
   in Xmip's expression language, a fork and a join, an end — and the scopes
   their boundary timers and catches stand in. It never names a design format.
 - **`generate`** and **`export`** — the Work Process unit a program is built

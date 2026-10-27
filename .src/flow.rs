@@ -48,7 +48,7 @@ pub trait Flow: Send + Sync {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Declared {
     pub name: String,
-    /// The correlation sets it follows, by name, in the order of the
+    /// The Correlations it follows, by name, in the order of the
     /// numbers its steps give them.
     pub sets: Vec<String>,
     /// Every name read of a Message before it is handed on.
@@ -75,7 +75,7 @@ pub enum Event {
 }
 
 /// A Message as a turn sees it: its identifier, the values read of it, and
-/// its key in each correlation set it has every key part of, by the set's
+/// its key in each Correlation it has every key part of, by the set's
 /// number.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Arrival {

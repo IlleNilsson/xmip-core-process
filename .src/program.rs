@@ -24,8 +24,8 @@ pub struct Program {
     pub scopes: Vec<Scope>,
     /// Where a Message starts an Instance.
     pub starts: Vec<u32>,
-    /// The correlation sets it follows, by the names the cluster's
-    /// `[[correlation_sets]]` declares them by (ADR-0024 and ADR-0066,
+    /// The Correlations it follows, by the names the cluster's
+    /// `[[correlations]]` declares them by (ADR-0024 and ADR-0066,
     /// amendments 2026-10-22). A set's keys are the cluster's, never the
     /// design's: what makes a Message's key in it is read where the set is
     /// declared, so every Work Process following it agrees.
@@ -39,7 +39,7 @@ pub struct Node {
     pub id: String,
     /// The innermost scope it stands in.
     pub scope: Option<u32>,
-    /// The correlation set, of [`Program::sets`], a Start or a step waiting
+    /// The Correlation, of [`Program::sets`], a Start or a step waiting
     /// for a Message takes its Message by.
     pub set: Option<u32>,
     pub step: Step,
@@ -207,7 +207,7 @@ impl Program {
                 problems.push(named("stands in a scope that is not there"));
             }
             if node.set.is_some_and(|set| set as usize >= self.sets.len()) {
-                problems.push(named("follows a correlation set that is not there"));
+                problems.push(named("follows a Correlation that is not there"));
             }
             for next in node.step.leads() {
                 if next >= nodes {

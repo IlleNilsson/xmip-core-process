@@ -7,7 +7,7 @@
 /// One Instance of a Work Process.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Instance {
-    /// Its key in each correlation set it has taken a Message by, by the
+    /// Its key in each Correlation it has taken a Message by, by the
     /// set's number: what a later Message of the set must carry to be
     /// handed to it.
     pub keys: Vec<(u32, String)>,

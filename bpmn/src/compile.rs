@@ -86,7 +86,7 @@ pub(crate) struct Builder<'d> {
     /// Each subprocess's start, once walked.
     inner_start: HashMap<&'d str, Vec<u32>>,
     starts: Vec<u32>,
-    /// The correlation sets its steps follow, in the order first named.
+    /// The Correlations its steps follow, in the order first named.
     sets: Vec<String>,
     pub(crate) refusals: Vec<Refusal>,
 }
