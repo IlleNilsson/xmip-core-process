@@ -14,7 +14,7 @@ the namespace `urn:xmip:process:1`, so other tools open the design and keep
 them: `xmip:call module unit` and `xmip:setting` on a service task, the unit
 it calls; `xmip:debatch` on a service task, the splitting unit; `xmip:batch
 most within` on a receive task; and `xmip:correlate set` on a start or a
-receive, the cluster's correlation set it takes Messages by. A condition is
+receive, the cluster's Correlation it takes Messages by. A condition is
 written in Xmip's expression language, `language="urn:xmip:expression"`.
 
 **What it compiles**: start, end (none, terminate, error, message), task with

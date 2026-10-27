@@ -21,11 +21,11 @@
 //! `xmip:debatch` names the splitting unit as `xmip:call` names any, and
 //! `xmip:batch most="100" within="PT5M"` makes a receive task collect.
 //! `xmip:correlate set="…"` on a start event, a receive task or a message
-//! catch event names the correlation set the step takes its Message by:
+//! catch event names the Correlation the step takes its Message by:
 //! the start initializes it, a later step follows it. The owner,
 //! 2026-10-22: *Correlations should be definable, like in BizTalk*, and
 //! *As long as the correlation sets are cluster wide*: a set's keys are
-//! declared once, in the cluster's `[[correlation_sets]]`, never in a
+//! declared once, in the cluster's `[[correlations]]`, never in a
 //! design, so every Work Process following it agrees on them.
 
 use assign::{Assignment, AssignmentValue};
@@ -49,8 +49,8 @@ pub fn extension<'a>(element: &'a Element, name: &str) -> Option<&'a Element> {
     element.child(MODEL, "extensionElements")?.child(XMIP, name)
 }
 
-/// The correlation set `element` takes its Message by, as the cluster's
-/// `[[correlation_sets]]` names it, where it names one.
+/// The Correlation `element` takes its Message by, as the cluster's
+/// `[[correlations]]` names it, where it names one.
 ///
 /// # Errors
 /// Its `xmip:correlate` names no set.

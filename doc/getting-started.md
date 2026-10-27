@@ -6,13 +6,13 @@ client's orders in the order they arrived, clients side by side
 (`doc/architecture/runtime-model.md` sections 3 and 22; ADR-0066, amendment
 2026-10-22).
 
-## 1. The cluster: a correlation set, and an Application
+## 1. The cluster: a Correlation, and an Application
 
 In the cluster's `xmip.toml`, the set the work is spread over, declared once
 for the cluster, and the Application that uses it:
 
 ```toml
-[[correlation_sets]]
+[[correlations]]
 name = "PerClient"
 keys = ["context:http.header.x-client"]   # the client, as a filter reads it
 on_failure = "block"                       # the default; "skip" lets the rest pass
@@ -28,7 +28,7 @@ name = "OrdersIn"
 receive_port = "Orders"
 interaction = "data-transfer"
 depth = "context"
-correlation_set = "PerClient"     # clients side by side, each client in order
+correlation = "PerClient"     # clients side by side, each client in order
 
 [[xmip_applications.work_processes]]
 name = "Batches"
@@ -47,7 +47,7 @@ destination = { send-port = "Out" }
 filter = "Status = 'batched'"
 ```
 
-Without `correlation_set` on `OrdersIn`, the Location goes one Stream at a
+Without `correlation` on `OrdersIn`, the Location goes one Stream at a
 time, end to end, keyed by its own name — what an update of all the
 merchandise needs, and nothing to configure.
 

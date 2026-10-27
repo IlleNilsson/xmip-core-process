@@ -1,7 +1,7 @@
 # Work Process instances
 
 What a Work Process is, that its state belongs to the cluster rather than to
-any thread or node, and that a Subscription starts it while a correlation set
+any thread or node, and that a Subscription starts it while a Correlation
 resumes it, are the estate's: `doc/architecture/runtime-model.md` section 22.
 What a Message is, its Sections and its immutability are `doc/terminology.md`,
 *Message and Section*. This document says the one thing left to say beside the

@@ -67,7 +67,7 @@ pub struct Shape {
     pub call: Option<CallView>,
     pub debatch: Option<CallView>,
     pub batch: Option<BatchView>,
-    /// The correlation set it takes its Message by.
+    /// The Correlation it takes its Message by.
     pub set: Option<String>,
     /// A timer's duration or date, as written.
     pub timer: Option<String>,
