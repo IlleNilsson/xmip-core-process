@@ -6,7 +6,7 @@ use path::expression::{Expression, Truth};
 mod scopes;
 
 use super::{Act, Arrival, Event, Refused};
-use crate::instance::{Instance, Outcome, Owner, Standing, Timer};
+use crate::instance::{Instance, Outcome, Owner, Standing};
 use crate::program::{Ending, Program, Step, Work};
 
 /// The most steps one turn takes: a flow that loops without waiting on
@@ -148,35 +148,6 @@ impl<'a> Turn<'a> {
             .iter()
             .position(|token| token.at == node && token.standing == Standing::Work)
             .ok_or_else(|| Refused::Unfit(format!("'{}' waits for no work", self.id(node))))
-    }
-
-    /// Every timer due by `now` fired, earliest first.
-    fn due(&mut self, now: i128) {
-        let mut due: Vec<Timer> = self
-            .state
-            .timers
-            .iter()
-            .copied()
-            .filter(|timer| timer.due_unix_nanos <= now)
-            .collect();
-        due.sort_by_key(|timer| (timer.due_unix_nanos, timer.id));
-        for timer in due {
-            // An earlier timer's interruption may have taken it.
-            if !self.state.timers.contains(&timer) {
-                continue;
-            }
-            self.state.timers.retain(|kept| kept.id != timer.id);
-            match timer.owner {
-                Owner::Node(node) => self.woken(node, now),
-                Owner::Scope(scope) => {
-                    let Some(timeout) = self.program.scope(scope).and_then(|s| s.timeout) else {
-                        continue;
-                    };
-                    self.interrupt(scope);
-                    self.add(timeout.next, now);
-                }
-            }
-        }
     }
 
     /// The Timer or Batch at `node` woken by its time.
