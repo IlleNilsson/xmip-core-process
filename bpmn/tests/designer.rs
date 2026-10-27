@@ -156,12 +156,12 @@ fn an_extension_is_set_replaced_and_removed() {
         ("10", Some("PT5M"))
     );
     assert_eq!(
-        approval.set.as_deref(),
+        approval.correlation.as_deref(),
         Some("Order"),
         "its correlation kept"
     );
     let set = Value {
-        set: "Payment".into(),
+        correlation: "Payment".into(),
         ..value()
     };
     let text = apply(&text, &edit(Extended::Correlate, Some(set))).expect("replaced");
@@ -173,7 +173,7 @@ fn an_extension_is_set_replaced_and_removed() {
         .find(|n| n.id == "Approval")
         .expect("Approval");
     assert_eq!(
-        (approval.batch.as_ref(), approval.set.as_deref()),
+        (approval.batch.as_ref(), approval.correlation.as_deref()),
         (None, Some("Payment"))
     );
     let call = Value {
@@ -254,6 +254,6 @@ fn value() -> Value {
         settings: Vec::new(),
         most: String::new(),
         within: None,
-        set: String::new(),
+        correlation: String::new(),
     }
 }
