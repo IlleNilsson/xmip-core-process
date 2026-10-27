@@ -1,12 +1,41 @@
 //! A turn's scopes: an error thrown and caught by the innermost scope that
 //! catches its code, a scope's flows interrupted, a flow gone on or added,
-//! and the timers a scope or a step starts.
+//! and the timers a scope or a step starts, fired once due.
 
 use super::Turn;
 use crate::instance::{Outcome, Owner, Standing, Timer, Token};
 use crate::program::{Due, Program, Step};
 
 impl Turn<'_> {
+    /// Every timer due by `now` fired, earliest first.
+    pub(super) fn due(&mut self, now: i128) {
+        let mut due: Vec<Timer> = self
+            .state
+            .timers
+            .iter()
+            .copied()
+            .filter(|timer| timer.due_unix_nanos <= now)
+            .collect();
+        due.sort_by_key(|timer| (timer.due_unix_nanos, timer.id));
+        for timer in due {
+            // An earlier timer's interruption may have taken it.
+            if !self.state.timers.contains(&timer) {
+                continue;
+            }
+            self.state.timers.retain(|kept| kept.id != timer.id);
+            match timer.owner {
+                Owner::Node(node) => self.woken(node, now),
+                Owner::Scope(scope) => {
+                    let Some(timeout) = self.program.scope(scope).and_then(|s| s.timeout) else {
+                        continue;
+                    };
+                    self.interrupt(scope);
+                    self.add(timeout.next, now);
+                }
+            }
+        }
+    }
+
     /// An error of `code` thrown at `node`: caught by the innermost scope
     /// catching it, every flow in that scope ended and one going on from
     /// its catch; or, caught by none, the Instance failed.
