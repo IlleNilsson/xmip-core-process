@@ -6,7 +6,7 @@
 //! <bpmn:process id="OrderApproval" isExecutable="true">
 //!   <bpmn:startEvent id="Received">
 //!     <bpmn:extensionElements>
-//!       <xmip:correlate set="Order"/>
+//!       <xmip:correlate correlation="Order"/>
 //!     </bpmn:extensionElements>
 //!   </bpmn:startEvent>
 //!   <bpmn:serviceTask id="Check">
@@ -20,7 +20,7 @@
 //!
 //! `xmip:debatch` names the splitting unit as `xmip:call` names any, and
 //! `xmip:batch most="100" within="PT5M"` makes a receive task collect.
-//! `xmip:correlate set="…"` on a start event, a receive task or a message
+//! `xmip:correlate correlation="…"` on a start event, a receive task or a message
 //! catch event names the Correlation the step takes its Message by:
 //! the start initializes it, a later step follows it. The owner,
 //! 2026-10-22: *Correlations should be definable, like in BizTalk*, and
@@ -53,16 +53,16 @@ pub fn extension<'a>(element: &'a Element, name: &str) -> Option<&'a Element> {
 /// `[[correlations]]` names it, where it names one.
 ///
 /// # Errors
-/// Its `xmip:correlate` names no set.
-pub fn set(element: &Element) -> Result<Option<String>, Refusal> {
+/// Its `xmip:correlate` names no Correlation.
+pub fn correlation(element: &Element) -> Result<Option<String>, Refusal> {
     let Some(correlate) = extension(element, "correlate") else {
         return Ok(None);
     };
     correlate
-        .attribute("set")
-        .filter(|set| !set.trim().is_empty())
-        .map(|set| Some(set.to_string()))
-        .ok_or_else(|| Refusal::new(element.label(), "its xmip:correlate names no set"))
+        .attribute("correlation")
+        .filter(|named| !named.trim().is_empty())
+        .map(|named| Some(named.to_string()))
+        .ok_or_else(|| Refusal::new(element.label(), "its xmip:correlate names no Correlation"))
 }
 
 /// The unit `called` names: `xmip:call` or `xmip:debatch`.

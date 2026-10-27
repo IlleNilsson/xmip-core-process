@@ -68,7 +68,7 @@ pub struct Shape {
     pub debatch: Option<CallView>,
     pub batch: Option<BatchView>,
     /// The Correlation it takes its Message by.
-    pub set: Option<String>,
+    pub correlation: Option<String>,
     /// A timer's duration or date, as written.
     pub timer: Option<String>,
     /// An error event's code.
@@ -240,8 +240,8 @@ fn shape(
             most: batch.attribute("most").unwrap_or_default().to_string(),
             within: batch.attribute("within").map(str::to_string),
         }),
-        set: extension::extension(element, "correlate")
-            .and_then(|c| c.attribute("set"))
+        correlation: extension::extension(element, "correlate")
+            .and_then(|c| c.attribute("correlation"))
             .map(str::to_string),
         timer: definition.and_then(timer_text),
         error: definition

@@ -239,7 +239,7 @@ impl<'d> Builder<'d> {
                 || element.name == "startEvent";
             let place = self.add(id, scope, step, lead);
             self.entry.insert(id, place);
-            match extension::set(element) {
+            match extension::correlation(element) {
                 Ok(Some(set)) if takes => {
                     let number = self.sets.iter().position(|known| *known == set);
                     let number = number.unwrap_or_else(|| {

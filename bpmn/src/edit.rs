@@ -96,7 +96,7 @@ pub struct Value {
     #[serde(default)]
     pub within: Option<String>,
     #[serde(default)]
-    pub set: String,
+    pub correlation: String,
 }
 
 impl Extended {
@@ -231,7 +231,7 @@ fn extended(text: &str, id: &str, name: Extended, value: Option<&Value>) -> Resu
             ),
             None => format!("<{tag} most=\"{}\"/>", escape(&value.most)),
         },
-        Extended::Correlate => format!("<{tag} set=\"{}\"/>", escape(&value.set)),
+        Extended::Correlate => format!("<{tag} correlation=\"{}\"/>", escape(&value.correlation)),
     };
     let root = document::read(&text)?;
     let element = named(&root, id)?;
