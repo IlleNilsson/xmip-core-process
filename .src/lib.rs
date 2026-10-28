@@ -27,6 +27,7 @@
 //! acts a turn answers and keeps the Instance in the Ledger, so a waiting
 //! Instance holds no thread (`runtime-model.md` section 22).
 
+pub mod declaration;
 pub mod design;
 pub mod export;
 pub mod flow;
@@ -35,6 +36,7 @@ pub mod generate;
 pub mod instance;
 pub mod program;
 
+pub use declaration::DECLARATIONS;
 pub use design::{DEFAULT_FORMAT, DesignFormat, LocalResources, NoResources, Refusal, remote};
 pub use flow::{Act, Arrival, Compiled, Declared, Event, Flow, Refused};
 pub use instance::{Instance, Outcome};
