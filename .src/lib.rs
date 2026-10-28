@@ -1,5 +1,9 @@
 #![forbid(unsafe_code)]
 
+pub mod declaration;
+
+pub use declaration::DECLARATIONS;
+
 use message::Message;
 use xcore::{Failure, PartyId};
 

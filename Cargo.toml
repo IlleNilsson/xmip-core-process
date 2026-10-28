@@ -14,6 +14,8 @@ description = "Configured Work Process execution contracts."
 path = ".src/lib.rs"
 
 [dependencies]
+# The process units' declarations and the stages they run at.
+node = { package = "xmip-core-node", git = "https://github.com/IlleNilsson/xmip-core-node", branch = "main" }
 xcore = { package = "xmip-core", git = "https://github.com/IlleNilsson/xmip-core", branch = "main" }
 message = { package = "xmip-core-message", git = "https://github.com/IlleNilsson/xmip-core-message", branch = "main" }
 
