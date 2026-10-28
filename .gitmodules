@@ -1,0 +1,3 @@
+[submodule "xmip-core-process-bpmn"]
+	path = bpmn
+	url = https://github.com/IlleNilsson/xmip-core-process-bpmn.git
