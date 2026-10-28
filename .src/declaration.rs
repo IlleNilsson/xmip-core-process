@@ -1,4 +1,5 @@
-//! Debatch, the process unit, as data (ADR-0066, amendment 2026-10-22): a
+//! Debatch, the process unit, as data (ADR-0066, amendments 2026-10-22 and
+//! 2026-10-27, a unit of the capability `debatch`): a
 //! batch split into one Message per item, at receive, streamed, and in an
 //! Xmip Work Process, through one splitting implementation (the owner,
 //! 2026-10-22). Declared, not built (open problem 47), and its settings not
@@ -12,7 +13,7 @@ use xcore::settings::Settings;
 /// Debatch: a batch split into one Message per item.
 pub const DEBATCH: &Declaration = &Declaration {
     name: "Debatch",
-    capability: "work-process",
+    capability: "debatch",
     stages: &[Stage::Receive, Stage::Process],
     settings: &Settings::none("Debatch"),
 };
