@@ -26,7 +26,6 @@ name = "Orders"
 [[xmip_applications.receive_locations]]
 name = "OrdersIn"
 receive_port = "Orders"
-interaction = "data-transfer"
 depth = "context"
 correlation = "PerClient"     # clients side by side, each client in order
 
