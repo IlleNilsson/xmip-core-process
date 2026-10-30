@@ -32,7 +32,7 @@ day it is a compiled piece executed when called upon.*
   each opening with its version.
 
 The runtime's Work Process step (`xmip-core-runtime`'s `work_step`) claims
-each Journey bound for a Work Process, finds its Instance by its correlation
+each Message bound for a Work Process, finds its Instance by its correlation
 key, takes a turn, and writes it all in one hand-on; an Instance waiting
 holds no thread (`doc/architecture/runtime-model.md` section 22). How one
 Instance handles many Messages over time is `doc/process-instances.md`, and a
