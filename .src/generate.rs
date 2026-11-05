@@ -38,7 +38,7 @@ pub struct Generated {
     pub cargo: String,
     /// `src/lib.rs`.
     pub library: String,
-    /// The `[[modules]]` entry declaring it, for the cluster's `xmip.toml`.
+    /// The `[[modules]]` entry declaring it, for `cluster.xmip`.
     pub module: String,
 }
 

@@ -40,4 +40,4 @@ first design from start to finish is `doc/getting-started.md`.
 
 Dependencies: Xmip's own crates only — `xmip-core`, `xmip-core-path` (the
 expression language), `xmip-core-assign`, `xmip-core-library-codec` and
-`xmip-core-abi`. `architecture.toml` carries the maturity.
+`xmip-core-abi`. `architecture.xmip` carries the maturity.
