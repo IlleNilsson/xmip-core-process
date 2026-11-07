@@ -6,6 +6,7 @@ use super::*;
 use crate::form::{self, read_acts, read_turn, write_acts, write_turn};
 use crate::instance::{Owner, Standing};
 use crate::program::{Branch, Call, Catch, Due, Ending, Node, Scope, Timeout};
+use std::assert_matches;
 
 const SECOND: u64 = 1_000_000_000;
 
@@ -90,10 +91,10 @@ fn a_start_initializes_its_set_and_a_wait_takes_only_a_message_of_that_key() {
     wait.set = Some(0);
     let flow = program(vec![start, wait, node("end", end())], Vec::new());
     let mut instance = Instance::new();
-    assert!(matches!(
+    assert_matches!(
         flow.advance(&mut instance, &arrival(1, &[]), 0),
         Err(Refused::Unfit(_))
-    ));
+    );
     flow.advance(&mut instance, &keyed(1, "A1"), 0)
         .expect("starts");
     assert_eq!(instance.key(0), Some("A1"));
@@ -128,15 +129,13 @@ fn a_call_then_a_publish_completes_in_two_turns() {
     let acts = flow
         .advance(&mut instance, &arrival(7, &[]), 0)
         .expect("starts");
-    assert!(
-        matches!(
-            acts.as_slice(),
-            [Act::Work {
-                node: 1,
-                message: 7,
-                ..
-            }]
-        ),
+    assert_matches!(
+        acts.as_slice(),
+        [Act::Work {
+            node: 1,
+            message: 7,
+            ..
+        }],
         "{acts:?}"
     );
     let acts = flow
@@ -412,8 +411,9 @@ fn an_error_boundary_catches_a_failed_call_by_its_code_as_try_and_catch() {
     let acts = flow
         .advance(&mut uncaught, &threw("offline"), 0)
         .expect("thrown");
-    assert!(
-        matches!(acts.as_slice(), [Act::Ended(Outcome::Failed { .. })]),
+    assert_matches!(
+        acts.as_slice(),
+        [Act::Ended(Outcome::Failed { .. })],
         "{acts:?}"
     );
 }
