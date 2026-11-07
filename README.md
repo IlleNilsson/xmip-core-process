@@ -29,7 +29,8 @@ day it is a compiled piece executed when called upon.*
   error no scope catches fails the Instance (`no-branch`, `loops` and a unit's
   own codes).
 - **`form`** — the binary forms a program, an Instance and a turn cross in,
-  each opening with its version.
+  each opening with its version; each value is a `codec::form::Form`,
+  `xmip-core-library-codec`'s one binary form.
 
 The runtime's Work Process step (`xmip-core-runtime`'s `work_step`) claims
 each Message bound for a Work Process, finds its Instance by its correlation

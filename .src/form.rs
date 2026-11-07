@@ -2,13 +2,14 @@
 //! unit, its [`Instance`] in the Ledger, and a turn's event and acts over
 //! the C ABI (`include/xmip_module.h` section 13). Each opens with its
 //! version, so a form written by a later Xmip is refused in words, never
-//! misread. Written with `xmip-core-library-codec`'s fields, as a Message's
-//! and a Journey's forms are.
+//! misread. Each is a [`Form`], `xmip-core-library-codec`'s one binary
+//! form, written with its fields, as a Message's and a Journey's forms are.
 
 mod program_form;
 mod turn_form;
 
 use codec::cursor::Cursor;
+use codec::form::Form;
 use codec::writer::ByteWriter;
 use codec::{CodecError, field};
 
@@ -20,16 +21,8 @@ use crate::program::Program;
 /// The version every form here opens with.
 pub const FORM_VERSION: u8 = 1;
 
-/// A value written and read back in its binary form.
-pub trait Form: Sized {
-    fn write(&self, out: &mut Vec<u8>);
-
-    /// # Errors
-    /// The bytes are cut short or say what no value of it is.
-    fn read(cursor: &mut Cursor<'_>) -> Result<Self, CodecError>;
-}
-
-/// `value` in its form, after the version.
+/// `value` in its form ([`Form`], `xmip-core-library-codec`'s), after the
+/// version.
 #[must_use]
 pub fn written<T: Form>(value: &T) -> Vec<u8> {
     let mut out = Vec::new();
@@ -46,9 +39,7 @@ pub fn read<T: Form>(bytes: &[u8]) -> Result<T, CodecError> {
     let mut cursor = Cursor::new(bytes);
     let version = cursor.byte()?;
     if version != FORM_VERSION {
-        return Err(CodecError::new(format!(
-            "a Work Process form of version {version}, where this Xmip reads {FORM_VERSION}"
-        )));
+        return Err(other_version(version));
     }
     let value = T::read(&mut cursor)?;
     if !cursor.is_empty() {
@@ -104,6 +95,12 @@ pub(crate) fn read_pairs(cursor: &mut Cursor<'_>) -> Result<Vec<(String, String)
     field::read_many(cursor, |cursor| {
         Ok((field::read_text(cursor)?, field::read_text(cursor)?))
     })
+}
+
+pub(crate) fn other_version(version: u8) -> CodecError {
+    CodecError::new(format!(
+        "a Work Process form of version {version}, where this Xmip reads {FORM_VERSION}"
+    ))
 }
 
 pub(crate) fn unknown(what: &str, tag: u8) -> CodecError {
