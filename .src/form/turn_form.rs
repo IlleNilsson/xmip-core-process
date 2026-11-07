@@ -3,11 +3,13 @@
 //! cross the C ABI.
 
 use codec::cursor::Cursor;
+use codec::form::Form;
 use codec::writer::ByteWriter;
 use codec::{CodecError, field};
 
 use super::{
-    FORM_VERSION, Form, number, pairs, read_number, read_pairs, read_texts, texts, unknown, written,
+    FORM_VERSION, number, other_version, pairs, read_number, read_pairs, read_texts, texts,
+    unknown, written,
 };
 use crate::flow::{Act, Arrival, Declared, Event, Refused};
 use crate::instance::{Instance, Outcome, Owner, Standing, Timer, Token};
@@ -282,12 +284,6 @@ pub fn read_turn(bytes: &[u8]) -> Result<(Instance, Event, i128), CodecError> {
         return Err(CodecError::new("bytes left after a turn"));
     }
     Ok((instance, event, now))
-}
-
-fn other_version(version: u8) -> CodecError {
-    CodecError::new(format!(
-        "a Work Process form of version {version}, where this Xmip reads {FORM_VERSION}"
-    ))
 }
 
 /// What a unit answers a turn with across the C ABI: the Instance as the

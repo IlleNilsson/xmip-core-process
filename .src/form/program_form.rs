@@ -2,12 +2,13 @@
 
 use assign::{Assignment, AssignmentValue};
 use codec::cursor::Cursor;
+use codec::form::Form;
 use codec::writer::ByteWriter;
 use codec::{CodecError, field};
 use path::expression::Value;
 use xcore::ScalarValue;
 
-use super::{Form, number, numbers, read_number, read_numbers, read_texts, texts, unknown};
+use super::{number, numbers, read_number, read_numbers, read_texts, texts, unknown};
 use crate::program::{Branch, Call, Catch, Due, Ending, Node, Program, Scope, Step, Timeout, Work};
 
 impl Form for Program {
