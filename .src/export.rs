@@ -18,12 +18,15 @@
 #![allow(unsafe_code)]
 
 use core::ffi::c_void;
-use std::panic::{AssertUnwindSafe, catch_unwind};
 
 use xmip_core_abi::XMIP_ABI_VERSION;
 use xmip_core_abi::ffi::{
-    Host, Module, Slice, Str, VtableHeader, WireDescriptor, WorkProcessVtable, status,
+    Host, Module, Slice, Str, VtableHeader, WireDescriptor, WorkProcessVtable,
 };
+/// The boundary's statuses and its one panic guard (specification section
+/// 6), here so the entry point [`export_work_process!`] writes in a
+/// module's crate reaches them.
+pub use xmip_core_abi::{ffi::status, guarded};
 
 use crate::flow::{Compiled, Flow};
 use crate::form::{self, read_turn, write_acts};
@@ -145,15 +148,18 @@ macro_rules! export_work_process {
             host: *const ::core::ffi::c_void,
             out: *mut ::core::ffi::c_void,
         ) -> i32 {
-            // Evaluated here, outside the unsafe block, so a caller's
-            // expression is never run with unsafe permitted.
-            let flow = $flow;
-            let identity = $crate::export::Identity {
-                unit: $unit,
-                version: ($major, $minor, $patch),
-            };
-            // SAFETY: the host's pointers are passed through unchanged.
-            unsafe { $crate::export::create(host, out, flow, identity) }
+            // Nothing unwinds into the host (specification section 6).
+            $crate::export::guarded($crate::export::status::PANIC, || {
+                // Evaluated here, outside the unsafe block, so a caller's
+                // expression is never run with unsafe permitted.
+                let flow = $flow;
+                let identity = $crate::export::Identity {
+                    unit: $unit,
+                    version: ($major, $minor, $patch),
+                };
+                // SAFETY: the host's pointers are passed through unchanged.
+                unsafe { $crate::export::create(host, out, flow, identity) }
+            })
         }
     };
 }
@@ -172,11 +178,6 @@ const fn table() -> WorkProcessVtable {
     }
 }
 
-/// Run `call`, answering `PANIC` rather than unwinding into the host.
-fn guarded(call: impl FnOnce() -> i32) -> i32 {
-    catch_unwind(AssertUnwindSafe(call)).unwrap_or(status::PANIC)
-}
-
 unsafe extern "C" fn configure(_: *mut c_void, _: Str) -> i32 {
     status::OK
 }
@@ -189,7 +190,7 @@ unsafe extern "C" fn declared(state: *mut c_void, out: *mut Slice) -> i32 {
     if state.is_null() || out.is_null() {
         return status::INVALID;
     }
-    guarded(|| {
+    guarded(status::PANIC, || {
         // SAFETY: state is the one `create` made, alive until `destroy`.
         let state = unsafe { &*state.cast::<State>() };
         // SAFETY: out is non-null and the caller's for the call.
@@ -213,7 +214,7 @@ unsafe extern "C" fn advance(
     if state.is_null() || out_len.is_null() || (turn.ptr.is_null() && turn.len > 0) {
         return status::INVALID;
     }
-    guarded(|| {
+    guarded(status::PANIC, || {
         // SAFETY: state is the one `create` made; it is only read here.
         let state = unsafe { &*state.cast::<State>() };
         let bytes = if turn.len == 0 {
@@ -256,6 +257,8 @@ unsafe extern "C" fn last_error(state: *mut c_void) -> Str {
 unsafe extern "C" fn destroy(state: *mut c_void) {
     if !state.is_null() {
         // SAFETY: state is the one `create` made, given back once.
-        drop(unsafe { Box::from_raw(state.cast::<State>()) });
+        let state = unsafe { Box::from_raw(state.cast::<State>()) };
+        // The flow's own drop is the module's code, guarded as any.
+        guarded((), || drop(state));
     }
 }
