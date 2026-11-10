@@ -127,7 +127,7 @@ document on a network is refused before anything is asked.
 
 In the designer, **Compile**: it asks for the module's name — `batches` — and
 writes the unit beside the design, in `batches/`: its `Cargo.toml`, its
-`src/lib.rs` carrying the compiled program, and `module.xmip`, its
+`src/lib.rs` carrying the compiled program, and `module.toml`, its
 `[[modules]]` entry. A refusal is said in words naming the element, and
 nothing is written. Then build it as Xmip is built, on the machine and for the
 target the node runs on:
@@ -141,7 +141,7 @@ Work Process unit. Copy it where the node's configuration says.
 
 ## 4. The node: the module, and the Work Process naming its unit
 
-`module.xmip`, as the compiler wrote it, goes into the node's configuration
+`module.toml`, as the compiler wrote it, goes into the node's configuration
 with the Work Process that names it:
 
 ```toml
