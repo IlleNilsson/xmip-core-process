@@ -3,13 +3,13 @@
 //! cross the C ABI.
 
 use codec::cursor::Cursor;
-use codec::form::Form;
+use codec::form::{Form, opened};
 use codec::writer::ByteWriter;
 use codec::{CodecError, field};
 
 use super::{
-    FORM_VERSION, number, other_version, pairs, read_number, read_pairs, read_texts, texts,
-    unknown, written,
+    FORM_VERSION, FORMS, number, pairs, read_number, read_pairs, read_texts, texts, unknown,
+    written,
 };
 use crate::flow::{Act, Arrival, Declared, Event, Refused};
 use crate::instance::{Instance, Outcome, Owner, Standing, Timer, Token};
@@ -273,10 +273,7 @@ pub fn write_turn(instance: &Instance, event: &Event, now_unix_nanos: i128) -> V
 /// As [`super::read`], for any of its parts.
 pub fn read_turn(bytes: &[u8]) -> Result<(Instance, Event, i128), CodecError> {
     let mut cursor = Cursor::new(bytes);
-    let version = cursor.byte()?;
-    if version != FORM_VERSION {
-        return Err(other_version(version));
-    }
+    opened(&mut cursor, FORM_VERSION, FORMS)?;
     let instance = Instance::read(&mut cursor)?;
     let event = Event::read(&mut cursor)?;
     let now = cursor.i128_be()?;
@@ -318,10 +315,7 @@ pub fn write_acts(answer: &Result<(Instance, Vec<Act>), Refused>) -> Vec<u8> {
 #[allow(clippy::type_complexity)]
 pub fn read_acts(bytes: &[u8]) -> Result<Result<(Instance, Vec<Act>), Refused>, CodecError> {
     let mut cursor = Cursor::new(bytes);
-    let version = cursor.byte()?;
-    if version != FORM_VERSION {
-        return Err(other_version(version));
-    }
+    opened(&mut cursor, FORM_VERSION, FORMS)?;
     let answer = match cursor.byte()? {
         0 => Ok((
             Instance::read(&mut cursor)?,
