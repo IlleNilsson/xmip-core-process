@@ -1,15 +1,16 @@
 //! The binary forms a Work Process crosses in: its [`Program`] inside the
 //! unit, its [`Instance`] in the Ledger, and a turn's event and acts over
 //! the C ABI (`include/xmip_module.h` section 13). Each opens with its
-//! version, so a form written by a later Xmip is refused in words, never
-//! misread. Each is a [`Form`], `xmip-core-library-codec`'s one binary
-//! form, written with its fields, as a Message's and a Journey's forms are.
+//! version (`codec::form::numbered`), so a form written by a later Xmip is
+//! refused in words, never misread. Each is a [`Form`],
+//! `xmip-core-library-codec`'s one binary form, written with its fields, as
+//! a Message's and a Journey's forms are.
 
 mod program_form;
 mod turn_form;
 
 use codec::cursor::Cursor;
-use codec::form::Form;
+use codec::form::{Form, from_numbered, numbered};
 use codec::writer::ByteWriter;
 use codec::{CodecError, field};
 
@@ -21,13 +22,15 @@ use crate::program::Program;
 /// The version every form here opens with.
 pub const FORM_VERSION: u8 = 1;
 
+/// What a form of another version is called where it is refused.
+pub(crate) const FORMS: &str = "a Work Process's bytes";
+
 /// `value` in its form ([`Form`], `xmip-core-library-codec`'s), after the
-/// version.
+/// version (`codec::form::numbered`).
 #[must_use]
 pub fn written<T: Form>(value: &T) -> Vec<u8> {
     let mut out = Vec::new();
-    out.byte(FORM_VERSION);
-    value.write(&mut out);
+    numbered(&mut out, FORM_VERSION, value);
     out
 }
 
@@ -36,16 +39,7 @@ pub fn written<T: Form>(value: &T) -> Vec<u8> {
 /// # Errors
 /// Another version, bytes cut short or left over, or a value no `T` is.
 pub fn read<T: Form>(bytes: &[u8]) -> Result<T, CodecError> {
-    let mut cursor = Cursor::new(bytes);
-    let version = cursor.byte()?;
-    if version != FORM_VERSION {
-        return Err(other_version(version));
-    }
-    let value = T::read(&mut cursor)?;
-    if !cursor.is_empty() {
-        return Err(CodecError::new("bytes left after a Work Process form"));
-    }
-    Ok(value)
+    from_numbered(bytes, FORM_VERSION, FORMS)
 }
 
 /// A program's form.
@@ -95,12 +89,6 @@ pub(crate) fn read_pairs(cursor: &mut Cursor<'_>) -> Result<Vec<(String, String)
     field::read_many(cursor, |cursor| {
         Ok((field::read_text(cursor)?, field::read_text(cursor)?))
     })
-}
-
-pub(crate) fn other_version(version: u8) -> CodecError {
-    CodecError::new(format!(
-        "a Work Process form of version {version}, where this Xmip reads {FORM_VERSION}"
-    ))
 }
 
 pub(crate) fn unknown(what: &str, tag: u8) -> CodecError {
