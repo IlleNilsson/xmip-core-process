@@ -137,7 +137,11 @@ cargo build --release --manifest-path batches/Cargo.toml
 ```
 
 The library — `batches.dll`, `libbatches.so` or `libbatches.dylib` — is the
-Work Process unit. Copy it where the node's configuration says.
+Work Process unit. Copy it where the node's configuration says: beside the
+node's configuration, as `library_path = "batches"` names it. The entry
+names the module, not a file, and each node names the file as its own
+system does (`xmip_module.h` section 1), so one configuration serves
+Windows, Linux and macOS nodes alike.
 
 ## 4. The node: the module, and the Work Process naming its unit
 
@@ -162,7 +166,7 @@ execution_host = "native-rust"
 trusted_required = false
 
 [modules.manifest.entrypoint]
-library_path = "batches.dll"
+library_path = "batches"
 symbol = "xmip_create_module_v1"
 
 [[modules.manifest.units]]
