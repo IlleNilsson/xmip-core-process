@@ -9,7 +9,9 @@ use path::expression::Value;
 use xcore::ScalarValue;
 
 use super::{number, numbers, read_number, read_numbers, read_texts, texts, unknown};
-use crate::program::{Branch, Call, Catch, Due, Ending, Node, Program, Scope, Step, Timeout, Work};
+use crate::program::{
+    Branch, Call, Catch, Due, Ending, Keep, Node, Program, Scope, Step, Timeout, Work,
+};
 
 impl Form for Program {
     fn write(&self, out: &mut Vec<u8>) {
@@ -18,6 +20,7 @@ impl Form for Program {
         field::many(out, &self.scopes, |out, scope| scope.write(out));
         numbers(out, &self.starts);
         texts(out, &self.sets);
+        texts(out, &self.values);
     }
 
     fn read(cursor: &mut Cursor<'_>) -> Result<Self, CodecError> {
@@ -27,6 +30,7 @@ impl Form for Program {
             scopes: field::read_many(cursor, Scope::read)?,
             starts: read_numbers(cursor)?,
             sets: read_texts(cursor)?,
+            values: read_texts(cursor)?,
         })
     }
 }
@@ -95,6 +99,14 @@ impl Form for Step {
                 out.byte(9);
                 ending.write(out);
             }
+            Self::Keep { values, next } => {
+                out.byte(10);
+                field::many(out, values, |out, keep| {
+                    number(out, keep.value);
+                    field::text(out, &keep.from);
+                });
+                number(out, *next);
+            }
         }
     }
 
@@ -140,6 +152,15 @@ impl Form for Step {
             },
             9 => Self::End {
                 ending: Ending::read(cursor)?,
+            },
+            10 => Self::Keep {
+                values: field::read_many(cursor, |cursor| {
+                    Ok(Keep {
+                        value: read_number(cursor)?,
+                        from: field::read_text(cursor)?,
+                    })
+                })?,
+                next: read_number(cursor)?,
             },
             tag => return Err(unknown("step", tag)),
         })

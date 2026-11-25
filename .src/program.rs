@@ -10,7 +10,7 @@
 //! the Work Process unit a node loads, read once as the unit opens.
 
 use assign::Assignment;
-use path::expression::Value;
+use path::expression::{Computed, Expression, Value};
 
 /// One compiled Work Process.
 #[derive(Clone, Debug, PartialEq)]
@@ -30,6 +30,12 @@ pub struct Program {
     /// design's: what makes a Message's key in it is read where the set is
     /// declared, so every Work Process following it agrees.
     pub sets: Vec<String>,
+    /// The values each Instance keeps of its own, by the names the design
+    /// declares them by, in the order a [`Keep`] numbers them: kept across
+    /// every Message it takes, and read by a decision that names one, where
+    /// any other name is read from the current Message (ADR-0066,
+    /// amendment 2026-11-25; open problem 191).
+    pub values: Vec<String>,
 }
 
 /// One step of a [`Program`].
@@ -52,6 +58,10 @@ pub enum Step {
     Start { next: u32 },
     /// Work on the current Message, which makes the next one.
     Call { work: Work, next: u32 },
+    /// Values the Instance keeps set, each computed from the current
+    /// Message's values and the Instance's own, in order: no Message is
+    /// made.
+    Keep { values: Vec<Keep>, next: u32 },
     /// The current Message published back through routing.
     Publish { next: u32 },
     /// Waiting for the next Message of the Instance's key.
@@ -99,6 +109,15 @@ pub struct Call {
     pub module: String,
     pub unit: String,
     pub settings: Vec<(String, Value)>,
+}
+
+/// One value a [`Step::Keep`] sets: the value, by its number among
+/// [`Program::values`], and what it is computed from, a value in Xmip's
+/// expression language (`path::expression::Computed`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Keep {
+    pub value: u32,
+    pub from: String,
 }
 
 /// One branch of a [`Step::Decide`]: its condition, in Xmip's expression
@@ -161,6 +180,7 @@ impl Step {
         match self {
             Self::Start { next }
             | Self::Call { next, .. }
+            | Self::Keep { next, .. }
             | Self::Publish { next }
             | Self::Wait { next }
             | Self::Batch { next, .. }
@@ -222,12 +242,29 @@ impl Program {
                 Step::Batch { most: 0, .. } => problems.push(named("batches no Message")),
                 Step::Decide { branches, .. } => {
                     for branch in branches {
-                        if let Err(why) = path::expression::Expression::parse(&branch.condition) {
+                        if let Err(why) = Expression::parse(&branch.condition) {
                             problems.push(named(&format!("has a condition that {why}")));
                         }
                     }
                 }
+                Step::Keep { values, .. } => {
+                    for keep in values {
+                        if keep.value as usize >= self.values.len() {
+                            problems.push(named("keeps a value the design does not declare"));
+                        }
+                        if let Err(why) = Computed::parse(&keep.from) {
+                            problems.push(named(&format!("keeps a value that {why}")));
+                        }
+                    }
+                }
                 _ => {}
+            }
+        }
+        for (place, value) in self.values.iter().enumerate() {
+            if value.trim().is_empty() {
+                problems.push(format!("a value of '{}' has no name", self.name));
+            } else if self.values[..place].contains(value) {
+                problems.push(format!("the value '{value}' is declared twice"));
             }
         }
         for (place, scope) in self.scopes.iter().enumerate() {
@@ -276,26 +313,47 @@ impl Program {
         self.scopes.get(usize::try_from(place).ok()?)
     }
 
-    /// Every name its conditions read, each once, in the order first read:
-    /// what the runtime reads of a Message before it hands it on.
+    /// Every name its conditions and the values it keeps read of a Message,
+    /// each once, in the order first read: what the runtime reads of a
+    /// Message before it hands it on. A name the design declares as a value
+    /// of its own is the Instance's, never read of a Message.
     #[must_use]
     pub fn reads(&self) -> Vec<String> {
         let mut names: Vec<String> = Vec::new();
+        let mut read = |name: &str| {
+            if !self.values.iter().any(|own| own == name)
+                && !names.iter().any(|known| known == name)
+            {
+                names.push(name.to_string());
+            }
+        };
         for node in &self.nodes {
-            if let Step::Decide { branches, .. } = &node.step {
-                for branch in branches {
-                    let Ok(expression) = path::expression::Expression::parse(&branch.condition)
-                    else {
-                        continue;
-                    };
-                    for name in expression.names() {
-                        if !names.iter().any(|known| known == name) {
-                            names.push(name.to_string());
-                        }
+            match &node.step {
+                Step::Decide { branches, .. } => {
+                    let parsed = branches
+                        .iter()
+                        .filter_map(|branch| Expression::parse(&branch.condition).ok());
+                    for expression in parsed {
+                        expression.names().into_iter().for_each(&mut read);
                     }
                 }
+                Step::Keep { values, .. } => {
+                    let parsed = values
+                        .iter()
+                        .filter_map(|keep| Computed::parse(&keep.from).ok());
+                    for computed in parsed {
+                        computed.names().into_iter().for_each(&mut read);
+                    }
+                }
+                _ => {}
             }
         }
         names
+    }
+
+    /// Whether `name` is a value the Instance keeps of its own.
+    #[must_use]
+    pub fn keeps(&self, name: &str) -> bool {
+        self.values.iter().any(|own| own == name)
     }
 }

@@ -6,6 +6,7 @@
 //! `xmip-core-library-codec`'s one binary form, written with its fields, as
 //! a Message's and a Journey's forms are.
 
+mod instance_form;
 mod program_form;
 mod turn_form;
 
@@ -19,8 +20,11 @@ pub use turn_form::{read_acts, read_turn, write_acts, write_turn};
 use crate::instance::Instance;
 use crate::program::Program;
 
-/// The version every form here opens with.
-pub const FORM_VERSION: u8 = 1;
+/// The version every form here opens with: 2 since an Instance keeps
+/// values of its own and its history, and a program declares them and a
+/// step sets them (ADR-0066, amendment 2026-11-25), so a unit or an
+/// Instance of version 1 is refused in words, never misread.
+pub const FORM_VERSION: u8 = 2;
 
 /// What a form of another version is called where it is refused.
 pub(crate) const FORMS: &str = "a Work Process's bytes";

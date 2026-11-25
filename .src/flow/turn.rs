@@ -1,13 +1,15 @@
 //! One turn of a compiled program: the event taken, then every flow that
 //! can go on run until each waits or ends (`super::Flow::advance`).
 
-use path::expression::{Expression, Truth};
+use path::expression::{Computed, Expression, Truth};
 
+mod kept;
 mod scopes;
 
 use super::{Act, Arrival, Event, Refused};
 use crate::instance::{Instance, Outcome, Owner, Standing};
 use crate::program::{Ending, Program, Step, Work};
+use kept::Reading;
 
 /// The most steps one turn takes: a flow that loops without waiting on
 /// anything is thrown as an error, never run forever.
@@ -20,9 +22,15 @@ pub const NO_BRANCH: &str = "no-branch";
 /// The code a turn throws where its flows loop without waiting.
 pub const LOOPS: &str = "loops";
 
+/// The code a turn throws where a value the Instance keeps cannot be
+/// computed: a name with no value, text that is not the kind asked, a
+/// division by zero or an overflow, with the reason.
+pub const NO_VALUE: &str = "no-value";
+
 pub(super) struct Turn<'a> {
     program: &'a Program,
     conditions: &'a [Vec<Expression>],
+    computations: &'a [Vec<Computed>],
     state: Instance,
     acts: Vec<Act>,
     /// When the turn is taken: what a timer it starts is due after.
@@ -32,13 +40,14 @@ pub(super) struct Turn<'a> {
 impl<'a> Turn<'a> {
     pub(super) const fn new(
         program: &'a Program,
-        conditions: &'a [Vec<Expression>],
+        (conditions, computations): (&'a [Vec<Expression>], &'a [Vec<Computed>]),
         state: Instance,
         now: i128,
     ) -> Self {
         Self {
             program,
             conditions,
+            computations,
             state,
             acts: Vec::new(),
             now,
@@ -207,6 +216,7 @@ impl<'a> Turn<'a> {
                 }
                 self.go(index, next, now);
             }
+            Step::Keep { values, next } => self.keep((index, node), &values, next),
             Step::Call { work, .. } => {
                 self.state.tokens[index].standing = Standing::Work;
                 let message = self.state.message.unwrap_or_default();
@@ -261,10 +271,14 @@ impl<'a> Turn<'a> {
         now: i128,
     ) {
         let compiled = &self.conditions[usize::try_from(node).unwrap_or(usize::MAX)];
+        let reading = Reading {
+            program: self.program,
+            instance: &self.state,
+        };
         let taken = branches
             .iter()
             .zip(compiled)
-            .find(|(_, condition)| condition.evaluate(&self.state) == Truth::True)
+            .find(|(_, condition)| condition.evaluate(&reading) == Truth::True)
             .map(|(branch, _)| branch.next)
             .or(otherwise);
         match taken {
@@ -339,9 +353,11 @@ impl<'a> Turn<'a> {
         }
     }
 
+    /// `arrival` the Message the Instance works on now, its values read
+    /// replacing the last Message's; the Instance's own values stay.
     fn current(&mut self, arrival: &Arrival) {
         self.state.message = Some(arrival.message);
-        self.state.values.clone_from(&arrival.values);
+        self.state.read.clone_from(&arrival.values);
     }
 
     fn step(&self, node: u32) -> Step {

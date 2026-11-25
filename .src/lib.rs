@@ -39,5 +39,5 @@ pub mod program;
 pub use declaration::DECLARATIONS;
 pub use design::{DEFAULT_FORMAT, DesignFormat, LocalResources, NoResources, Refusal, remote};
 pub use flow::{Act, Arrival, Compiled, Declared, Event, Flow, Refused};
-pub use instance::{Instance, Outcome};
+pub use instance::{Handled, Handling, Instance, Outcome, State};
 pub use program::{Program, Step};

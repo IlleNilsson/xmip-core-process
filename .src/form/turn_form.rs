@@ -1,136 +1,19 @@
-//! An [`Instance`]'s binary form, as the Ledger keeps it, and a turn's —
-//! the Instance and its event in, the Instance and the acts out — as they
-//! cross the C ABI.
+//! A turn's binary form — the Instance and its event in, the Instance and
+//! the acts out — as it crosses the C ABI, and what a unit declares.
 
 use codec::cursor::Cursor;
 use codec::form::{Form, opened};
 use codec::writer::ByteWriter;
 use codec::{CodecError, field};
 
+use super::instance_form::{keys, read_keys};
 use super::{
     FORM_VERSION, FORMS, number, pairs, read_number, read_pairs, read_texts, texts, unknown,
     written,
 };
 use crate::flow::{Act, Arrival, Declared, Event, Refused};
-use crate::instance::{Instance, Outcome, Owner, Standing, Timer, Token};
+use crate::instance::{Instance, Outcome};
 use crate::program::Work;
-
-fn keys(out: &mut Vec<u8>, keys: &[(u32, String)]) {
-    field::many(out, keys, |out, (set, key)| {
-        number(out, *set);
-        field::text(out, key);
-    });
-}
-
-fn read_keys(cursor: &mut Cursor<'_>) -> Result<Vec<(u32, String)>, CodecError> {
-    field::read_many(cursor, |cursor| {
-        Ok((read_number(cursor)?, field::read_text(cursor)?))
-    })
-}
-
-impl Form for Instance {
-    fn write(&self, out: &mut Vec<u8>) {
-        keys(out, &self.keys);
-        field::many(out, &self.tokens, |out, token| {
-            number(out, token.at);
-            out.byte(match token.standing {
-                Standing::Ready => 0,
-                Standing::Message => 1,
-                Standing::Timer => 2,
-                Standing::Work => 3,
-            });
-        });
-        field::many(out, &self.joins, |out, (join, arrived)| {
-            number(out, *join);
-            number(out, *arrived);
-        });
-        field::many(out, &self.timers, |out, timer| {
-            out.u64_be(timer.id);
-            let (tag, at) = match timer.owner {
-                Owner::Node(node) => (0, node),
-                Owner::Scope(scope) => (1, scope),
-            };
-            out.byte(tag);
-            number(out, at);
-            out.i128_be(timer.due_unix_nanos);
-        });
-        field::many(out, &self.batch, |out, message| {
-            out.u128_be(*message);
-        });
-        field::optional(out, self.message, |out, message| {
-            out.u128_be(message);
-        });
-        pairs(out, &self.values);
-        field::optional(out, self.ended.as_ref(), |out, ended| ended.write(out));
-        out.u64_be(self.next_timer);
-        out.u64_be(self.turns);
-    }
-
-    fn read(cursor: &mut Cursor<'_>) -> Result<Self, CodecError> {
-        Ok(Self {
-            keys: read_keys(cursor)?,
-            tokens: field::read_many(cursor, |cursor| {
-                let at = read_number(cursor)?;
-                let standing = match cursor.byte()? {
-                    0 => Standing::Ready,
-                    1 => Standing::Message,
-                    2 => Standing::Timer,
-                    3 => Standing::Work,
-                    tag => return Err(unknown("standing", tag)),
-                };
-                Ok(Token { at, standing })
-            })?,
-            joins: field::read_many(cursor, |cursor| {
-                Ok((read_number(cursor)?, read_number(cursor)?))
-            })?,
-            timers: field::read_many(cursor, |cursor| {
-                let id = cursor.u64_be()?;
-                let owner = match cursor.byte()? {
-                    0 => Owner::Node(read_number(cursor)?),
-                    1 => Owner::Scope(read_number(cursor)?),
-                    tag => return Err(unknown("timer owner", tag)),
-                };
-                Ok(Timer {
-                    id,
-                    owner,
-                    due_unix_nanos: cursor.i128_be()?,
-                })
-            })?,
-            batch: field::read_many(cursor, Cursor::u128_be)?,
-            message: field::read_optional(cursor, Cursor::u128_be)?,
-            values: read_pairs(cursor)?,
-            ended: field::read_optional(cursor, Outcome::read)?,
-            next_timer: cursor.u64_be()?,
-            turns: cursor.u64_be()?,
-        })
-    }
-}
-
-impl Form for Outcome {
-    fn write(&self, out: &mut Vec<u8>) {
-        match self {
-            Self::Completed => {
-                out.byte(0);
-            }
-            Self::Failed { code, reason } => {
-                out.byte(1);
-                field::text(out, code);
-                field::text(out, reason);
-            }
-        }
-    }
-
-    fn read(cursor: &mut Cursor<'_>) -> Result<Self, CodecError> {
-        Ok(match cursor.byte()? {
-            0 => Self::Completed,
-            1 => Self::Failed {
-                code: field::read_text(cursor)?,
-                reason: field::read_text(cursor)?,
-            },
-            tag => return Err(unknown("outcome", tag)),
-        })
-    }
-}
 
 impl Form for Declared {
     fn write(&self, out: &mut Vec<u8>) {

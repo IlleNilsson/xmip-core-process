@@ -14,8 +14,10 @@ day it is a compiled piece executed when called upon.*
 - **`program`** — the compiled form: a graph of typed steps — a start, work
   on a Message (a unit's call, an Assignment, a split), a publish, a wait for
   the next Message of a Correlation's key, a Batch, a timer, a decision
-  in Xmip's expression language, a fork and a join, an end — and the scopes
-  their boundary timers and catches stand in. It never names a design format.
+  in Xmip's expression language, values the Instance keeps set (`Keep`), a
+  fork and a join, an end — and the scopes their boundary timers and catches
+  stand in; and the values each Instance keeps of its own, by name
+  (`values`). It never names a design format.
 - **`generate`** and **`export`** — the Work Process unit a program is built
   into: a Rust crate carrying the program's bytes and exporting them with
   `export_work_process!` through `xmip_module.h` section 13, built as a
@@ -26,11 +28,18 @@ day it is a compiled piece executed when called upon.*
   time over an `Instance` the Ledger keeps. A turn takes one event — a
   Message arrived, the work it asked for done or thrown, its time due — and
   answers the acts the runtime carries out. `Compiled` runs a program; an
-  error no scope catches fails the Instance (`no-branch`, `loops` and a unit's
-  own codes).
+  error no scope catches fails the Instance (`no-branch`, `loops`,
+  `no-value` and a unit's own codes). A decision and a value kept read the
+  Instance's own values by the names the program declares, and the current
+  Message's by any other (ADR-0066, amendment 2026-11-25).
+- **`instance`** — an Instance's state: where its flows stand, its timers,
+  the current Message and what was read of it, its own values kept across
+  every Message, how it ended, and its history of Messages, the newest 64,
+  which the runtime writes each turn; `state` says it running, waiting,
+  failed or completed, and `failed_by` the Journey whose turn failed it.
 - **`form`** — the binary forms a program, an Instance and a turn cross in,
-  each opening with its version; each value is a `codec::form::Form`,
-  `xmip-core-library-codec`'s one binary form.
+  each opening with its version, 2 since 2026-11-25; each value is a
+  `codec::form::Form`, `xmip-core-library-codec`'s one binary form.
 
 The runtime's Work Process step (`xmip-core-runtime`'s `work_step`) claims
 each Message bound for a Work Process, finds its Instance by its correlation

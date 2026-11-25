@@ -18,9 +18,9 @@
 mod tests;
 mod turn;
 
-pub use turn::{LOOPS, NO_BRANCH};
+pub use turn::{LOOPS, NO_BRANCH, NO_VALUE};
 
-use path::expression::Expression;
+use path::expression::{Computed, Expression};
 
 use crate::instance::{Instance, Outcome};
 use crate::program::{Program, Step, Work};
@@ -115,32 +115,46 @@ pub enum Refused {
     Unfit(String),
 }
 
-/// A unit compiled from a design: its program, its conditions compiled
-/// once as it opens.
+/// A unit compiled from a design: its program, its conditions and the
+/// values it keeps compiled once as it opens.
 pub struct Compiled {
     program: Program,
     declared: Declared,
     conditions: Vec<Vec<Expression>>,
+    computations: Vec<Vec<Computed>>,
 }
 
 impl Compiled {
-    /// `program` checked and its conditions compiled.
+    /// `program` checked, its conditions and the values it keeps compiled.
     ///
     /// # Errors
     /// Every problem [`Program::check`] finds.
     pub fn new(program: Program) -> Result<Self, Vec<String>> {
         program.check()?;
         let mut conditions = Vec::with_capacity(program.nodes.len());
+        let mut computations = Vec::with_capacity(program.nodes.len());
         for node in &program.nodes {
-            let compiled = match &node.step {
-                Step::Decide { branches, .. } => branches
-                    .iter()
-                    .map(|branch| Expression::parse(&branch.condition))
-                    .collect::<Result<Vec<_>, _>>()
-                    .map_err(|why| vec![format!("'{}': {why}", node.id)])?,
-                _ => Vec::new(),
+            let (condition, computation) = match &node.step {
+                Step::Decide { branches, .. } => (
+                    branches
+                        .iter()
+                        .map(|branch| Expression::parse(&branch.condition))
+                        .collect::<Result<Vec<_>, _>>()
+                        .map_err(|why| vec![format!("'{}': {why}", node.id)])?,
+                    Vec::new(),
+                ),
+                Step::Keep { values, .. } => (
+                    Vec::new(),
+                    values
+                        .iter()
+                        .map(|keep| Computed::parse(&keep.from))
+                        .collect::<Result<Vec<_>, _>>()
+                        .map_err(|why| vec![format!("'{}': {why}", node.id)])?,
+                ),
+                _ => (Vec::new(), Vec::new()),
             };
-            conditions.push(compiled);
+            conditions.push(condition);
+            computations.push(computation);
         }
         let declared = Declared {
             name: program.name.clone(),
@@ -151,6 +165,7 @@ impl Compiled {
             program,
             declared,
             conditions,
+            computations,
         })
     }
 
@@ -176,7 +191,8 @@ impl Flow for Compiled {
             return Err(Refused::Ended);
         }
         let state = instance.clone();
-        let mut turn = turn::Turn::new(&self.program, &self.conditions, state, now_unix_nanos);
+        let compiled = (self.conditions.as_slice(), self.computations.as_slice());
+        let mut turn = turn::Turn::new(&self.program, compiled, state, now_unix_nanos);
         turn.take(event, now_unix_nanos)?;
         turn.run(now_unix_nanos);
         let (state, acts) = turn.finish();

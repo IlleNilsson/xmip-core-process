@@ -5,7 +5,7 @@
 use super::*;
 use crate::form::{self, read_acts, read_turn, write_acts, write_turn};
 use crate::instance::{Owner, Standing};
-use crate::program::{Branch, Call, Catch, Due, Ending, Node, Scope, Timeout};
+use crate::program::{Branch, Call, Catch, Due, Ending, Keep, Node, Scope, Timeout};
 use std::assert_matches;
 
 const SECOND: u64 = 1_000_000_000;
@@ -39,12 +39,18 @@ fn end() -> Step {
 }
 
 fn program(nodes: Vec<Node>, scopes: Vec<Scope>) -> Compiled {
+    kept(nodes, scopes, &[])
+}
+
+/// A program keeping `values` of its own.
+fn kept(nodes: Vec<Node>, scopes: Vec<Scope>, values: &[&str]) -> Compiled {
     Compiled::new(Program {
         name: "Orders".into(),
         nodes,
         scopes,
         starts: vec![0],
         sets: vec!["Order".into()],
+        values: values.iter().map(|value| (*value).to_string()).collect(),
     })
     .expect("holds together")
 }
@@ -515,6 +521,7 @@ fn a_program_that_does_not_hold_together_is_refused_naming_its_node() {
         scopes: Vec::new(),
         starts: vec![0],
         sets: Vec::new(),
+        values: Vec::new(),
     })
     .err()
     .expect("refused");
@@ -574,9 +581,156 @@ fn every_form_reads_back_as_it_was_written() {
     let refused = Err(Refused::Unfit("why".into()));
     assert_eq!(read_acts(&write_acts(&refused)).expect("reads"), refused);
     let mut later = form::program(flow.program());
-    later[0] = 2;
+    later[0] = form::FORM_VERSION + 1;
     assert!(
         form::read::<Program>(&later).is_err(),
         "another version is refused"
+    );
+}
+
+/// Keep `value` = `from`, the value numbered in [`kept`]'s list.
+fn keeping(values: &[(u32, &str)], next: u32) -> Step {
+    Step::Keep {
+        values: values
+            .iter()
+            .map(|(value, from)| Keep {
+                value: *value,
+                from: (*from).to_string(),
+            })
+            .collect(),
+        next,
+    }
+}
+
+/// An order delivered in parts: the start keeps what was ordered, each
+/// delivery the wait takes adds to what was delivered, and the decision
+/// loops back to the wait until every line is delivered (open problems 191
+/// and 194).
+fn in_parts() -> Compiled {
+    kept(
+        vec![
+            node("start", Step::Start { next: 1 }),
+            node("Note the order", keeping(&[(0, "Quantity"), (1, "0")], 2)),
+            node("Wait for a delivery", Step::Wait { next: 3 }),
+            node("Count it", keeping(&[(1, "Delivered + Quantity")], 4)),
+            node(
+                "All delivered?",
+                Step::Decide {
+                    branches: vec![Branch {
+                        condition: "Delivered >= Ordered".into(),
+                        next: 5,
+                    }],
+                    otherwise: Some(2),
+                },
+            ),
+            node("Confirm", Step::Publish { next: 6 }),
+            node("end", end()),
+        ],
+        Vec::new(),
+        &["Ordered", "Delivered"],
+    )
+}
+
+#[test]
+fn values_the_instance_keeps_outlast_every_message_a_wait_takes() {
+    let flow = in_parts();
+    assert_eq!(
+        flow.declared().reads,
+        ["Quantity"],
+        "its own values are never read of a Message"
+    );
+    let mut instance = Instance::new();
+    flow.advance(&mut instance, &arrival(1, &[("Quantity", "3")]), 0)
+        .expect("starts");
+    assert_eq!(instance.value("Ordered"), Some("3"));
+    assert_eq!(instance.value("Delivered"), Some("0"));
+    let acts = flow
+        .advance(&mut instance, &arrival(2, &[("Quantity", "1")]), 0)
+        .expect("a part");
+    assert!(acts.is_empty(), "it loops back to its wait: {acts:?}");
+    assert!(instance.waits_for_a_message());
+    assert_eq!(instance.value("Delivered"), Some("1"));
+    assert_eq!(
+        instance.read_value("Quantity"),
+        Some("1"),
+        "the Message's own"
+    );
+    assert_eq!(
+        instance.value("Ordered"),
+        Some("3"),
+        "kept across the Message"
+    );
+    let acts = flow
+        .advance(&mut instance, &arrival(3, &[("Quantity", "2")]), 0)
+        .expect("the rest");
+    assert_eq!(
+        acts,
+        vec![Act::Publish { message: 3 }, Act::Ended(Outcome::Completed)]
+    );
+    assert_eq!(instance.value("Delivered"), Some("3"));
+}
+
+#[test]
+fn a_value_that_cannot_be_computed_throws_no_value_naming_the_step_and_why() {
+    let flow = in_parts();
+    let mut instance = Instance::new();
+    let acts = flow
+        .advance(&mut instance, &arrival(1, &[]), 0)
+        .expect("thrown");
+    let [Act::Ended(Outcome::Failed { code, reason })] = acts.as_slice() else {
+        panic!("{acts:?}");
+    };
+    assert_eq!(code, turn::NO_VALUE);
+    assert!(
+        reason.contains("'Note the order' cannot keep Ordered")
+            && reason.contains("the current Message carries no Quantity"),
+        "{reason}"
+    );
+}
+
+#[test]
+fn a_program_keeping_what_it_does_not_declare_or_declaring_twice_is_refused() {
+    let refused = Compiled::new(Program {
+        name: "Broken".into(),
+        nodes: vec![
+            node("start", keeping(&[(2, "1"), (0, "Amount >")], 1)),
+            node("end", end()),
+        ],
+        scopes: Vec::new(),
+        starts: vec![0],
+        sets: Vec::new(),
+        values: vec!["Ordered".into(), "Ordered".into()],
+    })
+    .err()
+    .expect("refused");
+    for said in [
+        "'start' keeps a value the design does not declare",
+        "'start' keeps a value that",
+        "the value 'Ordered' is declared twice",
+    ] {
+        assert!(refused.iter().any(|one| one.contains(said)), "{refused:?}");
+    }
+}
+
+#[test]
+fn an_instance_with_values_and_history_and_a_keep_read_back_as_written() {
+    let flow = in_parts();
+    let bytes = form::program(flow.program());
+    assert_eq!(
+        &form::read::<Program>(&bytes).expect("reads"),
+        flow.program()
+    );
+    let mut instance = Instance::new();
+    flow.advance(&mut instance, &arrival(1, &[("Quantity", "3")]), 0)
+        .expect("starts");
+    instance.handled(crate::instance::Handled {
+        at_unix_nanos: 7,
+        what: crate::instance::Handling::Started,
+        message: 1,
+        journey: 11,
+    });
+    assert_eq!(
+        form::read::<Instance>(&form::instance(&instance)).expect("reads"),
+        instance
     );
 }
