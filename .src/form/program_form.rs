@@ -5,7 +5,7 @@ use codec::cursor::Cursor;
 use codec::form::Form;
 use codec::writer::ByteWriter;
 use codec::{CodecError, field};
-use path::expression::Value;
+use expression::Value;
 use xcore::ScalarValue;
 
 use super::{number, numbers, read_number, read_numbers, read_texts, texts, unknown};

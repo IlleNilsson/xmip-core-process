@@ -20,7 +20,7 @@ mod turn;
 
 pub use turn::{LOOPS, NO_BRANCH, NO_VALUE};
 
-use path::expression::{Computed, Expression};
+use expression::{Computed, Expression};
 
 use crate::instance::{Instance, Outcome};
 use crate::program::{Program, Step, Work};

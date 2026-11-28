@@ -48,6 +48,6 @@ holds no thread (`doc/architecture/runtime-model.md` section 22). How one
 Instance handles many Messages over time is `doc/process-instances.md`, and a
 first design from start to finish is `doc/getting-started.md`.
 
-Dependencies: Xmip's own crates only — `xmip-core`, `xmip-core-path` (the
-expression language), `xmip-core-assign`, `xmip-core-library-codec` and
-`xmip-core-abi`. `architecture.toml` carries the maturity.
+Dependencies: Xmip's own crates only — `xmip-core`, `xmip-core-node`,
+`xmip-core-expression` (the expression language), `xmip-core-assign`,
+`xmip-core-library-codec` and `xmip-core-abi`. `architecture.toml` carries the maturity.

@@ -12,16 +12,17 @@ path = ".src/lib.rs"
 
 [dependencies]
 # The process units' declarations and the stages they run at.
-node = { package = "xmip-core-node", git = "https://github.com/IlleNilsson/xmip-core-node", branch = "main" }
-xcore = { package = "xmip-core", git = "https://github.com/IlleNilsson/xmip-core", branch = "main" }
+node = { workspace = true }
+xcore = { workspace = true }
 # A decision is one line of Xmip's expression language, compiled once as a
-# unit opens (ADR-0066 clause 2).
-path = { package = "xmip-core-path", git = "https://github.com/IlleNilsson/xmip-core-path", branch = "main" }
+# unit opens (ADR-0066 clause 2): the capability, used directly (ADR-0066,
+# amendment 2026-11-28).
+expression = { workspace = true }
 # An Assignment is the assign capability's, done by a Work Process alone.
-assign = { package = "xmip-core-assign", git = "https://github.com/IlleNilsson/xmip-core-assign", branch = "main" }
+assign = { workspace = true }
 # The fields every compact form is written with.
-codec = { package = "xmip-core-library-codec", git = "https://github.com/IlleNilsson/xmip-core-library-codec", branch = "main" }
+codec = { workspace = true }
 # The C boundary export.rs stands on: the header's tables, mirrored in Rust.
-xmip_core_abi = { package = "xmip-core-abi", git = "https://github.com/IlleNilsson/xmip-core-abi", branch = "main" }
+xmip_core_abi = { workspace = true }
 
 [lints]

@@ -10,7 +10,7 @@
 //! the Work Process unit a node loads, read once as the unit opens.
 
 use assign::Assignment;
-use path::expression::{Computed, Expression, Value};
+use expression::{Computed, Expression, Value};
 
 /// One compiled Work Process.
 #[derive(Clone, Debug, PartialEq)]
@@ -113,7 +113,7 @@ pub struct Call {
 
 /// One value a [`Step::Keep`] sets: the value, by its number among
 /// [`Program::values`], and what it is computed from, a value in Xmip's
-/// expression language (`path::expression::Computed`).
+/// expression language (`expression::Computed`).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Keep {
     pub value: u32,

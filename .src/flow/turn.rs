@@ -1,7 +1,7 @@
 //! One turn of a compiled program: the event taken, then every flow that
 //! can go on run until each waits or ends (`super::Flow::advance`).
 
-use path::expression::{Computed, Expression, Truth};
+use expression::{Computed, Expression, Truth};
 
 mod kept;
 mod scopes;

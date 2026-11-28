@@ -8,7 +8,7 @@
 //! counted Message by Message, where until this amendment each Message a
 //! wait took replaced everything its decisions read.
 
-use path::expression::Names;
+use expression::Names;
 
 use super::{NO_VALUE, Turn};
 use crate::instance::Instance;
